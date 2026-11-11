@@ -16,18 +16,18 @@ fire first, and releasing after a rescue hold does not put the device to sleep.
 ## How it works
 
 A frozen KOReader can't read its own button, so the watching is done by
-`powerwatch.sh`, a small shell daemon the plugin starts with `setsid`. It reads
+`powerRescue.sh`, a small shell daemon the plugin starts with `setsid`. It reads
 the power key (`/dev/input/event2`, `bd71828-pwrkey` on the Clara BW) straight
-from evdev. The plugin stamps `/tmp/powerwatch.heartbeat` whenever KOReader
+from evdev. The plugin stamps `/tmp/powerRescue.heartbeat` whenever KOReader
 handles a power press or resumes; if no stamp shows up within 6 s of a rescue
 hold, KOReader is considered frozen.
 
-Log: `/tmp/powerwatch.log`. Menu: Settings → Device → Power-button rescue
+Log: `/tmp/powerRescue.log`. Menu: Settings → Device → Power-button rescue
 (turn it off, or see the watchdog status).
 
 ## Install
 
-Copy this folder to `.adds/koreader/plugins/powerwatch.koplugin` and restart
+Copy this folder to `.adds/koreader/plugins/powerRescue.koplugin` and restart
 KOReader.
 
 Tested on a Kobo Clara BW (FW 4.46) with KOReader v2026.07.2.
