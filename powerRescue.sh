@@ -8,13 +8,13 @@
 # press/release and on resume). No stamp means KOReader is frozen, so it gets
 # killed and koreader.sh restarts it through its crash handler.
 
-DEV="${POWERWATCH_DEV:-/dev/input/event2}"
-HOLD_SECS="${POWERWATCH_HOLD:-3}"
-STALE_SECS="${POWERWATCH_STALE:-6}"
-HEARTBEAT="${POWERWATCH_HEARTBEAT:-/tmp/powerwatch.heartbeat}"
-RESCUED="${POWERWATCH_RESCUED:-/tmp/powerwatch.rescued}"
-PIDFILE="${POWERWATCH_PIDFILE:-/tmp/powerwatch.pid}"
-LOG="${POWERWATCH_LOG:-/tmp/powerwatch.log}"
+DEV="${POWERRESCUE_DEV:-/dev/input/event2}"
+HOLD_SECS="${POWERRESCUE_HOLD:-3}"
+STALE_SECS="${POWERRESCUE_STALE:-6}"
+HEARTBEAT="${POWERRESCUE_HEARTBEAT:-/tmp/powerRescue.heartbeat}"
+RESCUED="${POWERRESCUE_RESCUED:-/tmp/powerRescue.rescued}"
+PIDFILE="${POWERRESCUE_PIDFILE:-/tmp/powerRescue.pid}"
+LOG="${POWERRESCUE_LOG:-/tmp/powerRescue.log}"
 KEY_POWER=116
 
 log() { echo "$(date '+%F %T') $*" >>"$LOG"; }
@@ -39,7 +39,7 @@ stop_tasks() {
         case "$cwd$exe" in *"/mnt/onboard"*) ;; *) continue ;; esac
         case "$exe" in */luajit|*/dropbear|*/dbus-monitor) continue ;; esac
         cmd=$(tr '\0' ' ' <"$p/cmdline" 2>/dev/null)
-        case "$cmd" in *koreader.sh*|*powerwatch*|"dd bs 16"*|"od -An"*|"") continue ;; esac
+        case "$cmd" in *koreader.sh*|*powerRescue*|"dd bs 16"*|"od -An"*|"") continue ;; esac
         kill -9 "$pid" 2>/dev/null && log "stopped $pid: $cmd"
     done
     for h in $HELPERS; do

@@ -4,7 +4,7 @@ KOReader started (apps, audio) and, if KOReader itself is frozen, restart it.
 The power-off hold moves from 2 to 6 seconds.
 
 A frozen main loop cannot see its own key presses, so the actual watching is
-done by powerwatch.sh, a small shell daemon reading the power key from evdev.
+done by powerRescue.sh, a small shell daemon reading the power key from evdev.
 This plugin starts that daemon and stamps a heartbeat file whenever KOReader
 handles a power press, so the daemon can tell a frozen KOReader from a
 working one.
@@ -16,14 +16,14 @@ local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local logger = require("logger")
 local _ = require("gettext")
 
-local HEARTBEAT = "/tmp/powerwatch.heartbeat"
--- Left by powerwatch.sh when it had to restart a frozen KOReader.
-local RESCUED = "/tmp/powerwatch.rescued"
-local PIDFILE = "/tmp/powerwatch.pid"
-local LOG = "/tmp/powerwatch.log"
+local HEARTBEAT = "/tmp/powerRescue.heartbeat"
+-- Left by powerRescue.sh when it had to restart a frozen KOReader.
+local RESCUED = "/tmp/powerRescue.rescued"
+local PIDFILE = "/tmp/powerRescue.pid"
+local LOG = "/tmp/powerRescue.log"
 
-local PowerWatch = WidgetContainer:extend{
-    name = "powerwatch",
+local PowerRescue = WidgetContainer:extend{
+    name = "powerRescue",
     is_doc_only = false,
 }
 
@@ -45,7 +45,7 @@ local function daemonRunning()
     if not cmd then return false end
     local line = cmd:read("*a") or ""
     cmd:close()
-    return line:find("powerwatch.sh", 1, true) ~= nil
+    return line:find("powerRescue.sh", 1, true) ~= nil
 end
 
 local HOLD_SECS = 3
@@ -74,8 +74,8 @@ end
 local function wrapHandlers()
     local press = UIManager.event_handlers.PowerPress
     local release = UIManager.event_handlers.PowerRelease
-    if not press or not release or UIManager._powerwatch_wrapped then return end
-    UIManager._powerwatch_wrapped = true
+    if not press or not release or UIManager._powerRescue_wrapped then return end
+    UIManager._powerRescue_wrapped = true
     UIManager.event_handlers.PowerPress = function(...)
         stamp()
         pressed_at = os.time()
@@ -91,7 +91,7 @@ local function wrapHandlers()
         if held >= HOLD_SECS and not UIManager._entered_poweroff_stage then
             -- A rescue hold: the watchdog handles it, so don't also go to sleep.
             UIManager:unschedule(UIManager.poweroff_action)
-            logger.info("PowerWatch: rescue hold, returning to the menu")
+            logger.info("PowerRescue: rescue hold, returning to the menu")
             rescue()
             return
         end
@@ -99,7 +99,7 @@ local function wrapHandlers()
     end
 end
 
-function PowerWatch:init()
+function PowerRescue:init()
     if not Device:isKobo() then return end
     -- The handlers are installed by the device before plugins load.
     wrapHandlers()
@@ -108,20 +108,20 @@ function PowerWatch:init()
         -- KOReader was restarted by the watchdog and reopened the last book.
         UIManager:nextTick(rescue)
     end
-    if G_reader_settings:nilOrTrue("powerwatch_enabled") then
+    if G_reader_settings:nilOrTrue("powerRescue_enabled") then
         self:startDaemon()
     end
     self.ui.menu:registerToMainMenu(self)
 end
 
-function PowerWatch:startDaemon()
+function PowerRescue:startDaemon()
     if daemonRunning() then return end
-    local script = self.path .. "/powerwatch.sh"
+    local script = self.path .. "/powerRescue.sh"
     os.execute(string.format("setsid sh '%s' >/dev/null 2>&1 </dev/null &", script))
-    logger.info("PowerWatch: started", script)
+    logger.info("PowerRescue: started", script)
 end
 
-function PowerWatch:stopDaemon()
+function PowerRescue:stopDaemon()
     local f = io.open(PIDFILE, "r")
     if not f then return end
     local pid = tonumber(f:read("*l"))
@@ -133,23 +133,23 @@ function PowerWatch:stopDaemon()
     os.remove(PIDFILE)
 end
 
-function PowerWatch:onResume()
+function PowerRescue:onResume()
     stamp()
 end
 
-function PowerWatch:addToMainMenu(menu_items)
-    menu_items.powerwatch = {
+function PowerRescue:addToMainMenu(menu_items)
+    menu_items.powerRescue = {
         text = _("Power-button rescue"),
         sorting_hint = "device",
         sub_item_table = {
             {
                 text = _("Hold power 3 s to stop a frozen task"),
                 checked_func = function()
-                    return G_reader_settings:nilOrTrue("powerwatch_enabled")
+                    return G_reader_settings:nilOrTrue("powerRescue_enabled")
                 end,
                 callback = function()
-                    local on = not G_reader_settings:nilOrTrue("powerwatch_enabled")
-                    G_reader_settings:saveSetting("powerwatch_enabled", on)
+                    local on = not G_reader_settings:nilOrTrue("powerRescue_enabled")
+                    G_reader_settings:saveSetting("powerRescue_enabled", on)
                     if on then self:startDaemon() else self:stopDaemon() end
                 end,
             },
@@ -171,4 +171,4 @@ function PowerWatch:addToMainMenu(menu_items)
     }
 end
 
-return PowerWatch
+return PowerRescue
