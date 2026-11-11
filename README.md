@@ -1,4 +1,4 @@
-# Power-button rescue (powerwatch.koplugin)
+# Power-button rescue (powerRescue.koplugin)
 
 A KOReader plugin for Kobo. Hold the power button for **3 seconds** to stop
 whatever is stuck and get back to the library.
